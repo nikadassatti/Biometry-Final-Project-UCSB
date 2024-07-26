@@ -1,0 +1,693 @@
+---
+title: "Assessing the Impact of Marine Protected Areas on Targeted and Non-Targeted Fish Species: A Meta-Analysis"
+author: "Nika Dassatti"
+date: "March 16, 2024"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+	message = FALSE,
+	warning = FALSE
+)
+# you must have echo = set to TRUE
+```
+
+
+```{r data and libraries, include=FALSE}
+
+# upload necessary libraries
+library(tidyverse)
+library(ggplot2)
+library(psych)
+library(car)
+library(multcomp)
+library(cowplot)
+library(ggplot2)
+library(fitdistrplus)
+library("gridExtra")
+# include other libraries you may need
+```
+
+```{r warnings=FALSE, fig.show="hold", echo=FALSE, output=FALSE }
+## Loading in my data
+pisco_data<-read.csv("NIKA_DATA.csv")
+```
+## Abstract
+This meta-analysis examines the effectiveness of Marine Protected Areas (MPAs), specifically in regards to regulating fishing activities. This will be analyzed through analysis of the biomass of targeted and non-targeted fish species, and how biomass changes inside and outside MPA's, also taking into acount possible alternative explanations such as kelp density. Furthermore, this analysis will analyze whether density and biomass are correlated to understand how regulations may effect community structure as well as population sizes. Using data collected by the Partnership for Interdisciplinary Studies of Coastal Oceans (PISCO) and the Jenn Caselle Lab along the Western Coast, we focus on kelp bass as a targeted species and blacksmith as a non-targeted species. Our analysis reveals a significant increase in kelp bass biomass inside MPAs compared to reference areas, suggesting that reduced fishing activities directly contribute to this disparity. Conversely, blacksmith biomass shows no significant difference inside and outside MPAs, indicating that the associated increase in biomass of kelp bass is a direct result of decreased fishing rather than more suitable habitats in MPAs. Correlational analysis suggests a positive association between kelp bass density and biomass, reinforcing the impact of fishing restrictions on fish populations. Additionally, despite previous suggestions of macroalgae density influencing fish populations, our analysis finds no significant relationship between macrocystis stipes density and kelp bass biomass. Future research should focus on long-term monitoring across species to understand complex ecosystem dynamics, including multi-trophic interactions and climate change resilience. While this meta-analysis addresses potential alternative explanations and limitations, further investigation into benthic features such as reef structure is recommended to confirm the direct effects of fishing restrictions within MPAs.
+
+## Introduction
+
+  Marine protected areas (MPA) are oceanic regions in which human activities, including fishing and development are regulated  ("Marine Protected Areas"). The Partnership for Interdisciplinary Studies of Coastal Oceans (PISCO) includes the research, monitoring, and education contributions of a collection of  researches along the Western Coast who work closely to communicate, make accessible their scientific findings to uphold protection of MPA’s and better understand the ecological communities they support ("Marine Protected Areas"). One collective approach of PISCO research is to evaluate the effect of MPAs ("Marine Protected Areas"). Using data to answer the following two questions is one way to evaluate said effectiveness; “Do MPAs alter the population abundance and size structure of fished species? How do those results vary among species, MPAs, and why?” as well as “What is the amount of habitat that should be protected to encompass the majority of habitat-associated biodiversity?” ("Marine Protected Areas"). In this report, I will use data collected by PISCO scientists and the Jenn Caselle Lab to analyze  how the biomass of kelp bass, a targeted species, will change inside versus outside of marine protected areas (Carlson, P). The data I am using has 233 observations and 10 variables. This will be compared to the same analysis of  blacksmith, a non-targeted species. Analysis of blacksmith biomass will serve as a valuable reference for determining whether other features within a site are having a confounding impact on fish biomass that are unrelated to the regulations in place inside an MPA.Due to strict fishing regulations and preservation efforts, kelp bass biomass will be higher inside Marine Protected Areas (MPAs) compared to outside reference areas. As a non-targeted species, the biomass of blacksmiths will be similar inside and outside of MPAs. 
+  Furthermore, this analysis will asses whether there is a relationship between the density and biomass of kelp bass to determine whether MPAs impact both populations sizes as well as the structure of these populations and the size of the fish, and whether these two are correlation. This is of particular interest for understanding the impact of MPAs through fishing regulations since large fish are often disproportionately targeted by fishing activities (Rochet et al. 2012). We expect there will be a linear relationship between density and biomass.  
+  Lastly, this analysis will evaluate whether there is a relationship between the density of macrocystis stipes and kelp bass biomass. Previous studies have suggested that a greater density of macroalgae (measured in this analysis as macrocystis stipes), which serves as habitat structure and a food source, supports larger fish populations (Teagle et al. 2017). We do not expect there to be a relationship between the density of macrocystis stipes and the biomass of kelp bass in this study since MPA and reference areas are selected to have similar habitat features to examine the direct effect of fishing restrictions in MPAs on ecological communitites ("Marine Protected Areas").
+
+
+## Exploratory Data Analysis
+
+  Before beginning analysis the data was cleaned and the distribution of my variables of interest were explored. First, the PISCO long term data sets for fish surveys as well as benthic surverys were cleaned and merged to contain only my variables of interest. I cleaned the data to contain only survey data from UCSB which is the subset of data that accounts for MPA sites at the Chanel Islands, the location I am most interested in analyzing. Since this analysis will focus on the effects of MPA's on a targeted fish species, kelp bass, and compare that to a reference species, the blacksmith, fish survey data was cleaned to contain only the density and biomass of these two species. Both density (number of individuals) and biomass (kg) are measured per transect. Additionally, in order to asses the relationship between kelp, an ecologically significant ecosystem feature, and the biomass of kelp bass, data only for macrocystis were selected from the benthic data. The data was further cleaned to omit any NAs and select only the the islands Anacapa and Santa Cruz, two islands where lots the majority of UCSB PISCO data are collected. Finally, I selected data only after the year 2014. This data was then merged to create a data set that contains macrocystis stipe density, and the biomass and density of my two species of interest as well as the survey year, site, island, and site status (Appendix).
+
+  The data of kelp bass biomass, the first response variable in this analysis was graphed to determine normality. The un-transformed data for kelp bass biomass (kg/transect) was not normally distributed (Figure 1). The data was transformed using both a log-transformation and a square-root transformation, neither of which made the data normally distributed (Figure 1). Normality was also assessed using a qqPlot and Shapiro-wilks test for the un-transformed and transformed data sets (Appendix). We are able to invoke the central limit theorem (CLT) and assume normality for kelp bass biomass since there are more than 50 observations. The CLT states that the distribution of the sample mean approaches a normal distribution as the sample size increases, regardless of the shape of the original population distribution, as long as the sample size is relatively large (Kwak et al 2017).
+  
+```{r warnings=FALSE, fig.show="hold", echo=FALSE, output=FALSE, fig.cap= "Fig. 1:Histogram to display the distribution of kelp bass biomass (kg/transect) for the un-transformed data (left), log-transformed data (center), and square-root-transformed data (left). None of these histograms follow a normal distribution "}
+
+# Histogram of un-transformed y-variable (kelp bass biomass)
+histogram<-ggplot(pisco_data, aes(x=bm_PCLA, fill=site_status))+ #making ggplot 
+  geom_histogram(binwidth = 0.1)+ #making histogram to test normality
+  theme_classic()+ #changing theme
+  labs(x="Kelp bass (PCLA) biomass (kg/transect)", y="frequency")+ #create labels
+  ggtitle("Histogram of kelp bass (PCLA) biomass (kg/trasect)")+ #create title
+  theme(axis.title=element_text(face="bold", size=5), plot.title = element_text(size = 6)) #changing text elements 
+
+pisco_data$log_bm_PCLA<-log(pisco_data$bm_PCLA+1) #making a new variable that is the log transformation of the PCLA biomass
+
+## Histogram of log transformed y-variable (kelp bass biomass)
+histogram2<-ggplot(pisco_data, aes(x=log_bm_PCLA, fill=site_status))+ #making a ggplot of the log transformed data
+  geom_histogram(binwidth = 0.04)+ #changing color, making histogram
+  theme_classic()+ #changing theme
+  labs(x="Log of kelp bass biomass (kg/transect)", y="frequency")+ #changing labels 
+  ggtitle("Histogram of log-transformed data for kelp bass biomass (kg/transect)")+ #title 
+  theme(axis.title=element_text(face="bold", size=5), plot.title = element_text(size = 6)) #changing text elements 
+
+pisco_data$sqrt_bm_PCLA<-sqrt(pisco_data$bm_PCLA+1) #making a new variable that is the log transformation of the PCLA biomass
+
+#Histogram of square root transformed y-variable (kelp bass biomass)
+histogram3<-ggplot(pisco_data, aes(x=sqrt_bm_PCLA, fill=site_status))+ #making a ggplot of the log transformed data
+  geom_histogram (binwidth = 0.04)+ #making histogram
+  theme_classic()+ #changing theme
+  labs(x="Sqrt of kelp bass biomass(kg/transect)", y="frequency")+ #changing labels
+  ggtitle("Histogram of square-root-transformed data for kelp bass biomass(kg/transect)")+ #title 
+  theme(axis.title=element_text(face="bold", size=5), plot.title = element_text(size = 6)) #changing text elements 
+
+grid.arrange(histogram, histogram2, histogram3, nrow=3) #putting all three histograms into one chunk/display 
+
+```
+
+  The data of blacksmith biomass, the second response variable in this analysis was graphed to determine normality. The un-transformed data for blacksmith biomass (kg/transect) was not normally distributed (Figure 2). A similar procedure was used to transform the blacksmith data as was used to transform the kelp bass data. The data was transformed using both a log-transformation and a square-root transformation, neither of which made the data normally distributed (Figure 2). Normality was determined using a qqPlot and Shapiro-wilks test for the un-transformed and transformed data sets as well(Appendix). Similarly to the data for kelp bass biomass, we are able to invoke the central limit theorem (CLT) and assume normality for blacksmith biomass since there are more than 50 observations. 
+```{r warnings=FALSE, fig.show="hold", echo=FALSE, output=FALSE, fig.cap= "Fig. 2: Histogram to display the distribution of blacksmith biomass (kg/transect) for the un-transformed data (left), log-transformed data (center), and square-root-transformed data (left. None of these histograms follow a normal distribution"}
+## Histogram of un-transformed y-variable (blacksmith biomass)
+histogram4<-ggplot(pisco_data, aes(x=bm_CPUN, fill=site_status))+ #making ggplot 
+  geom_histogram(binwidth = 0.1)+ #making histogram to test normality
+  theme_classic()+ #changing theme
+  labs(x="Blacksmith (CPUN) biomass (kg/transect)", y="frequency")+ #create labels
+  ggtitle("Histogram of blacksmith (CPUN) biomass (kg/trasect)")+ #create title
+  theme(axis.title=element_text(face="bold", size=5), plot.title = element_text(size = 6)) #changing text elements 
+
+pisco_data$log_bm_CPUN<-log(pisco_data$bm_CPUN+1) #making a new variable that is the log transformation of CPUN biomass
+
+## Histogram of log transformed y-variable (blacksmith biomass)
+histogram5<-ggplot(pisco_data, aes(x=log_bm_CPUN, fill=site_status))+ #making a ggplot of the log transformed data
+  geom_histogram(binwidth = 0.04)+ #changing color, making histogram
+  theme_classic()+ #changing theme
+  labs(x="Log of blacksmith biomass (kg/transect)", y="frequency")+ #changing labels 
+  ggtitle("Histogram of log-transformed data for blacksmith biomass (kg/transect)")+ #title 
+  theme(axis.title=element_text(face="bold", size=5), plot.title = element_text(size = 6)) #changing text elements 
+
+pisco_data$sqrt_bm_CPUN<-sqrt(pisco_data$bm_CPUN+1) #making a new variable that is the log transformation of  CPUN biomass
+
+#Histogram of square root transformed y-variable (blacksmith biomass)
+histogram6<-ggplot(pisco_data, aes(x=sqrt_bm_CPUN, fill=site_status))+ #making a ggplot of the log transformed data
+  geom_histogram (binwidth = 0.04)+ #making histogram
+  theme_classic()+ #changing theme
+  labs(x="Sqrt of blacksmith biomass(kg/transect)", y="frequency")+ #changing labels
+  ggtitle("Histogram of square-root-transformed data for blacksmith biomass(kg/transect)")+ #title 
+  theme(axis.title=element_text(face="bold", size=5), plot.title = element_text(size = 6)) #changing text elements 
+
+grid.arrange(histogram4, histogram5, histogram6, nrow=3) #putting all three histograms into one chunk/display 
+
+```
+
+Box-plots were used to visualize the relationship between site status and the biomass of kelp bass and blacksmith (kg/transcript). There appears to be a difference in the central tendency of the kelp bass biomass (kg/transect) across the two site statuses but not in the central tendency of blacksmith biomass (kg/transect). There are outliers for both kelp bass and blacksmith in both MPA's and reference areas. For ecological reasons, I decided to include all outliers in my analysis since fishing often disproportionately targets large fish (Rochet et al. 2012). This reasoning for inducing outliers applies to decisions made throughout the entirety of this statistical analysis. 
+```{r warnings=FALSE, fig.show="hold", echo=FALSE, output=FALSE, fig.cap= "Fig. 3: Boxplots for kelp bass biomass (kg/transect) (left) and blacksmith biomass (kg/transect) (right) in MPA and Reference areas. There are outliers for all the treatments that I chose to include since large fish are often especially important in regards to fishing management strategies. There apears to be a difference in the central tendency of the kelp bass biomass (kg/transect) across the two site statuses but not in the central tendency of blacksmith biomass (kg/transect) "}
+categoricalkb<-ggplot(pisco_data, aes(x=site_status, y=bm_PCLA, fill=site_status))+ #making a ggplot, defining x and y, naming it categorical k(elp) b(ass)
+  geom_boxplot(outlier.shape=NA)+ #omitting outliers so they will not be double represented when geom jitter layer is added 
+  geom_jitter(width=0.25)+ #adding individual data points over the box plot 
+  labs(x="site status", y="Kelp bass biomass (kg/transect)")+ #creating labels 
+  ggtitle("Kelp bass biomass (kg/transect) inside and outside MPA")+ #making a title
+  theme(axis.title=element_text(face="bold", size=6), plot.title = element_text(size = 8)) #changing text elements 
+
+categoricalbs<-ggplot(pisco_data, aes(x=site_status, y=bm_CPUN, fill=site_status))+ #making a ggplot, defining x and y, naming it categorical b(lack)s(mith)
+  geom_boxplot(outlier.shape=NA)+ #omitting outliers so they will not be double represented when geom jitter layer is added 
+  geom_jitter(width=0.25)+ #adding individual data points over the box plot
+  labs(x="site status", y="Blacksmith biomass (kg/transect)")+ #creating labels 
+  ggtitle("Blacksmith  biomass (kg/transect) inside and outside MPA")+ #making a title 
+  theme(axis.title=element_text(face="bold", size=6), plot.title = element_text(size = 8)) #changing text elements 
+
+grid.arrange(categoricalkb, categoricalbs, nrow=1) #displaying both boxplots together 
+
+```
+
+A scatterplot was used to visualize the relationship between kelp bass density (fish/transect) and kelp bass biomass (kg/transect). These two numeric variables do appear to have a positive linear relationship (Figure 4).
+```{r warnings=FALSE, fig.show="hold", echo=FALSE, output=FALSE, fig.cap= "Fig. 4: Plot of kelp bass density (fish/transect) and kelp bass biomass (kg/transect).There does appear to be a positive linear relationship. "}
+## plot y~x(numeric):
+twonum1<-ggplot(pisco_data, aes(x=den_PCLA, y=bm_PCLA))+ #making ggplot, defining variables, naming the plot 
+  geom_point() + #scatter plot
+  geom_point(data = filter(pisco_data, site_status == "mpa"), aes(color = "MPA")) +  # Change color for points in MPA
+  labs(x = "Density of Kelp Bass (number of fish/transect)", y = "Kelp bass biomass (kg/transect)") + #adding informative lables 
+  scale_color_manual(values = c("red"), labels = c("MPA"))+  # Specify color and label for the legend
+  ggtitle("Kelp bass biomass (kg/transect) vs kelp bass density (fish/transect)") #making a title
+plot(twonum1)
+```
+
+A scatter-plot was used to visualize the relationship between the density of macrocystis stipes (#/transect) and kelp bass biomass (kg/transect). These two numeric variables do not appear to have a linear relationship (Figure 5).
+```{r warnings=FALSE, fig.show="hold", echo=FALSE, output=FALSE, fig.cap= "Fig. 5:Plot of macrocystis stipe density (#/transect) and kelp bass biomass (kg/transect).There does not appear to be a relationship between the two. "}
+## plot y~x(numeric) 2:
+twonum2<-ggplot(pisco_data, aes(x=den_MACSTIPES, y=bm_PCLA))+ #making ggplot, defining variables, naming the plot 
+  geom_point()+ #scatter plot
+  geom_point(data = filter(pisco_data, site_status == "mpa"), aes(color = "MPA")) +  # Change color for points in MPA
+  labs(x = "Density of macrocystis stipes (number/transect)", y = "Kelp bass biomass (kg/transect)") + #adding informative lables 
+  scale_color_manual(values = c("red"), labels = c("MPA"))+ # Specify color and label for the legend
+  ggtitle("Kelp bass biomass (kg/transect) vs density of macrocystis stipes") #informative title
+plot(twonum2)
+```
+## Statistical Methods
+
+Statistical analysis was performed to measure the significance of site status on the biomass of kelp bass and blacksmith. Two correlations were run to analyze the relationship between the density and biomass of kelp bass, as well as between the density of macrocystis (kelp), and kelp bass biomass. All tests were performed in R. Before running each statistical test, assumptions of normality were tested using histograms, qqPlots,  Shapiro-wilks tests, and pairs-panels plots. Assumptions for Pearson's correlation were checked using pairs-panels plots, and when assumptions failed the non-parametric Spearman's correlation was employed. Levene's tests were employed to assess the presence of heteroscedasticity, with a significance level set at α=0.05 for all analyses.
+
+
+
+#### Is the median biomass of kelp bass, a targeted species, significantly different inside and outside of MPAs?
+A wilcoxon rank sum test, also known as a Mann-Whitney U test, was conducted to examine the impact of site status on the biomass of kelp bass. This test compares the central tendency of two groups that are not normally distributed and do not have equal variance, as determined by Levene's test. Prior to this, normality and equal variance assumptions were assessed using histograms, QQ plots, Shapiro-Wilk tests, and Levene's tests. Assumption of of independence of observations is met based on study methods.
+
+Despite attempts at transformation, the data for kelp bass biomass in MPAs and reference areas remained non-normally distributed and violated the assumption of equal variance (Appendix). Hence, the wilcoxon rank sum test was deemed appropriate for comparing biomass across site statuses. This test assumes that the distributions of the two groups have similar shapes, an assumption that was assesed using histogram shape (Appendix).
+
+Unlike a t-test, which compares means, the Wilcoxon rank sum test assesses whether the central tendency, or median, of a response across two groups is significantly different.
+
+H0: Median kelp bass biomass (kg/transect) inside of MPAs equals the median of kelp bass biomass (kg/transect) in reference areas
+
+HA: Median kelp bass biomass (kg/transect) inside of MPAs does not equal the median of kelp bass biomass (kg/transect) in reference areas 
+
+
+### Is the mean biomass of blacksmith, a non-targeted species, significanly different inside and outside of MPAs?
+
+A two-sample t-test was used to compare whether the mean biomass of blacksmith is significantly different inside and outside of MPAs. The first assumptions of a two-sample t-test are that the observations from each group represent a random sample, which is met based on the sampling methods of the data. The second assumption is that the observations are normally distributed. Normality assumptions were assessed using histograms, QQ plots, Shapiro-Wilk tests.Despite attempts at transformation, the data for kelp bass biomass in MPAs and reference areas remained non-normally distributed, however since there are more than 50 samples we are able to invoke the central limit theorem (appendix). The third assumption is that the observations have equal variance across the two groups which was confirmed using a Levene's test (appendix). 
+ 
+H0: The mean biomass of blacksmith (kg/transect) in MPAs is equal to the mean biomass of blacksmith (kg/transect) in reference areas 
+ 
+HA: The mean biomass of blacksmith (kg/transect) in MPAs is not equal to the mean biomass of blacksmith (kg/transect) in reference areas. 
+
+
+
+#### Is kelp bass density a good predictor of kelp bass biomass?
+
+To asses whether kelp bass density a good predictor of kelp bass biomass, a Pearson's correlation analysis was conducted. Prior to running the statistical test, the assumption that x and y follow a bivariate normal distribution was tested by analyzing pairs-panels plots. Linearity between density and biomass was confirmed based on the flat line in the pairs panels scatter plot. The scatter plot was also used to confirm that the points have an elliptical shape. Finally, the normality of density and biomass were assessed using the pairs-panels histograms. The data were not normally distributed but central limit theorem can be invoked since the sample size far surpasses 50. Additionally, the assumption of independence of observations was upheld based on the methodology employed for data collection. 
+
+H0: There is no significant correlation between kelp bass density (fish/transect) and kelp bass biomass (kg/transect)
+
+HA: There is a significant correlation between kelp bass density (fish/transect) and kelp bass biomass (kg/transect).
+
+
+#### Is macrocystis stipe density a good predictor of kelp bass biomass?
+
+To asses whether macrocystis stipe density is a good predictor of kelp bass biomass, a non-parametric Spearmans's correlation analysis was conducted. Prior to running the statistical test, the assumption that x and y follow a bivariate normal distribution was tested by analyzing pairs-panels plots. Since assumptions were not met, a non-parametric alternative, the Spearman's correlation was used. The assumption that the relationship between the density of macrocystis stipes and the biomass of kelp bass is monotonic was determined based on the pairs-panels scatter plot (appendix). The Spearman's correlation analysis is a valuble non-parametric alternative to the Pearson's correlation analysis to determine whether two variables are correlated even if they are not linearly related. 
+
+H0:There is no significant correlation between the density of macrocystis stipes (#/transect) and kelp bass biomass (kg/transect)
+
+HA:There is a significant correlation between the density of macrocystis stipes (#/transect) and kelp bass biomass (kg/transect)
+
+
+
+## Results
+
+#### Is the median biomass of kelp bass, a targeted species, significantly different inside and outside of MPAs?
+
+Based on the results of this t-test, there is a significant difference between the median kelp bass biomass (kg/transect) inside and outside of MPAs. With a 95% confidence interval and 0.05 alpha level, a p-value of 0.02366, which is less than alpha means we can reject the null hypothesis that there is not significant difference between the median biomass of kelp bass (kg/transect) inside and outside of MPAs. The test statistic for this test is 5.188, and the degrees of freedom are 231.
+
+```{r warnings=FALSE, fig.show="hold", echo=FALSE, output=FALSE, fig.cap= "Fig. 6: Boxplot of kelp bass biomass (kg/transect) by site status"}
+categoricalkb<-ggplot(pisco_data, aes(x=site_status, y=bm_PCLA, fill=site_status))+ #making a ggplot, defining x and y, naming it categorical k(elp) b(ass)
+  geom_boxplot(outlier.shape=NA)+ #omitting outliers so they will not be double represented when geom jitter layer is added 
+  geom_jitter(width=0.25)+ #adding individual data points over the box plot 
+  labs(x="site status", y="Kelp bass biomass (kg/transect)")+ #creating labels 
+  ggtitle("Kelp bass biomass (kg/transect) inside and outside MPA")+ #making a title
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+plot(categoricalkb)
+
+```
+
+#### Is the mean biomass of blacksmith, a non-targeted species, significanly different inside and outside of MPAs?
+
+Based on the results of this t-test, there is not a significant difference between the mean blacksmith biomass (kg/transect) inside and outside of MPAs. With a 95% confidence interval and 0.05 alpha level, a p-value of 0.1269 which is greater than alpha means we fail to reject the null hypothesis that there is a significant difference between the mean biomass (kg/transect) of blacksmith inside and outside of MPAs.The test statistic for this t-test is -1.5321, and the degrees of freedom are 231. The 95% confidence interval is -0.38520866 to 0.04819e313. Sample estimates for the mean blacksmith biomass are 0.4399424 kg/transect inside MPAs and  0.6084502 kg/transect in reference areas. These similar estimates further support the conclusions of the t-test.
+
+```{r warnings=FALSE, fig.show="hold", echo=FALSE, output=FALSE, fig.cap= "Fig. 7:Boxplot of blacksmith biomass (kg/transect) by site status"}
+categoricalbs<-ggplot(pisco_data, aes(x=site_status, y=bm_CPUN, fill=site_status))+ #making a ggplot, defining x and y, naming it categorical b(lack)s(mith)
+  geom_boxplot(outlier.shape=NA)+ #omitting outliers so they will not be double represented when geom jitter layer is added 
+  geom_jitter(width=0.25)+ #adding individual data points over the box plot
+  labs(x="site status", y="Blacksmith biomass (kg/transect)")+ #creating labels 
+  ggtitle("Blacksmith  biomass (kg/transect) inside and outside MPA")+ #making a title 
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+plot(categoricalbs)
+
+```
+
+#### Is kelp bass density a good predictor of kelp bass biomass?
+
+From the results of the Pearson’s parametric correlation, we conclude that r is equal to 0.7599329  which suggests a strong positive correlation between the density of kelp bass (fish/transect) and biomass of kelp bass (kg/transect). The p value is <2.2e-16 which is less than our alpha value of 0.05. This means we can reject the null hypothesis that there is no significant correlation between the density of kelp bass (fish/transect) and biomass of kelp bass (kg/transect). Our test statistic is  17.769, and df= 23. The 95% confidence interval is 0.6481601 to 0.7224044, which does not contain zero, hence there is a strong positive correlation between  the density of kelp bass (fish/transect) and biomass of kelp bass (kg/transect).
+
+```{r warnings=FALSE, fig.show="hold", echo=FALSE, output=FALSE, fig.cap= "Fig. 8: Scatterplot of   kelp bass density (fish/transect) and kelp bass biomass (kg/transect). Linear model fitted with 95% CI"}
+
+#visualizing results
+ggplot(pisco_data, aes(x=den_PCLA, y=bm_PCLA))+
+  geom_point(size=3)+
+  geom_smooth(method="lm", alpha=0.5, size=0.5)+
+  ylab("Kelp bass biomass (kg/transect)")+ 
+  xlab("Kelp bass density (fish/transect)")+
+  theme_bw()+ #cute theme
+  theme(text = element_text(size=12)) 
+
+# From the results of the Pearson’s parametric correlation, we conclude that r is equal to 0.7599329  which suggests a strong positive correlation between the density of kelp bass (fish/transect) and biomass of kelp bass (kg/transect). The p value is <2.2e-16 which is less than our alpha value of 0.05. This means we can reject the null hypothesis that there is no significant correlation between the density of kelp bass (fish/transect) and biomass of kelp bass (kg/transect). Our test statistic is  17.769, and df= 23. The 95% confidence interval is 0.6481601 to 0.7224044, which does not contain zero, hence there is a strong positive correlation between  the density of kelp bass (fish/transect) and biomass of kelp bass (kg/transect).
+```
+
+#### Is macrocystis stipe density a good predictor of kelp bass biomass?
+
+From the results of the Pearson’s parametric correlation, we conclude that rho is equal to -0.03937696 which suggests weak negative relationship between the density of macrocystis stipes (#/transect) and the biomass of kelp bass (kg/transect). The p value is 0.5498 which is greater than our alpha value 0f 0.05. This means we fail to reject the null hypothesis that there is no significant monotonic relationship between the density of macrocystis stipes (#/transect) and the biomass of kelp bass (kg/transect). Our test statistic is 2191198. In conclusion, there is not a significant monotonic relationship between the density of macrocystis stipes (#/transect) and the biomass of kelp bass (kg/transect).
+
+```{r warnings=FALSE, fig.show="hold", echo=FALSE, output=FALSE, fig.cap= "Fig. 9: Scatterplot of   macrocystis stipe density (#/transect) and kelp bass biomass (kg/transect) "}
+
+
+#visualizing results
+ggplot(pisco_data, aes(x=den_MACSTIPES, y=bm_PCLA))+
+  geom_point(size=3)+
+  geom_smooth(alpha=0.5, size=0.5)+
+  ylab("Kelp bass biomass (kg/transect)")+ 
+  xlab("Density of macrocysitis stipes (#/transect)")+
+  theme_bw()+ 
+  theme(text = element_text(size=12)) 
+
+#From the results of the Pearson’s parametric correlation, we conclude that rho is equal to -0.03937696 which suggests weak negative relationship between the density of macrocystis stipes (#/transect) and the biomass of kelp bass (kg/transect). The p value is 0.5498 which is greater than our alpha value 0f 0.05. This means we fail to reject the null hypothesis that there is no significant monotonic relationship between the density of macrocystis stipes (#/transect) and the biomass of kelp bass (kg/transect). Our test statistic is 2191198. In conclusion, there is not a significant monotonic relationship between the density of macrocystis stipes (#/transect) and the biomass of kelp bass (kg/transect).
+
+```
+
+## Discussion
+  Through analysis of the fish-survey and benthic-survey data collected by UCSB's PISCO divers, several conclusions can be drawn regarding the effectiveness of MPAs in influencing the biomass of targeted fish species and the relationship between benthic species and kelp bass, as well as the correlation between the density and number of fish.
+
+The results indicate a significant difference between the median kelp bass biomass inside and outside of MPAs. Specifically, the median biomass of kelp bass inside MPAs is significantly greater than the median biomass of kelp bass in reference areas. Conversely, there is no significant difference between the mean biomass of blacksmith inside and outside of MPAs. Since the results show differences in central tendency for the targeted species (kelp bass) but not for the non-targeted species (blacksmith), it suggests that the disparity in biomass is a direct result of reduced fishing activities inside MPAs. If the results were significant for both targeted and non-targeted species, it would imply that the increase in biomass inside MPAs is an indirect effect, possibly due to enhanced ecosystem structure.
+
+While the initial analysis focused on kelp bass biomass, statistical analysis indicates that the density of kelp bass correlates with their biomass. Although correlation does not imply causation, the results suggest a positive association between increased fish density and biomass.
+
+Another potential explanation for higher kelp bass biomass inside MPAs besides reduced fishing activities could be healthier kelp forest ecosystems. Previous studies have suggested that a greater density of macroalgae (measured in this analysis as macrocystis stipes), which serves as habitat structure and a food source, supports larger fish populations (Teagle et al. 2017). However, the analysis found no significant relationship between macrocystis stipes density and kelp bass biomass. This finding further supports the overarching theme of the analysis, indicating that the direct reduction in fishing activities inside MPAs is responsible for the associated increase in kelp bass biomass compared to reference areas.
+
+While this analysis is primarily focused on the impacts of fishing restrictions inside of MPAs, Future research should focus on further long-term monitoring across species that could allow for further understanding of more complex ecosystem features including multi-trophic interactions and climate change resilience. This analysis addressed two possible alternative explanations for the results, however a potential limitation to this meta-analysis is lack of consideration of other benthic features. While I addressed the possible relationship between kelp and kelp bass biomass and used a reference species, it would be valuable to analyze more benthic attributes of the ecosystem such as reef structure to determine whether the results are a direct consequence of fishing restrictions. 
+
+
+## References
+Baptiste Auguie (2017). gridExtra: Miscellaneous Functions for “Grid” Graphics. R package version 2.3. https://CRAN.R-project.org/package=gridExtra
+
+Carlson, Peter. (2014-2023)."Nika_data". PISCO
+
+Fox J, Weisberg S (2019). _An R Companion to Applied Regression_, Third edition. Sage, Thousand
+  Oaks CA. <https://socialsciences.mcmaster.ca/jfox/Books/Companion/>.  
+  
+H. Wickham. ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York, 2016.
+
+Hadley Wickham, Jim Hester and Jennifer Bryan (2021). readr: Read Rectangular Text Data. R package version 2.1.1. https://CRAN.R-project.org/package=readr
+
+Hothorn T, Bretz F, Westfall P (2008). “Simultaneous Inference in General Parametric Models.”
+  _Biometrical Journal_, *50*(3), 346-363. 
+
+Kwak, S. G., & Kim, J. H. (2017). Central limit theorem: the cornerstone of modern statistics. Korean journal of anesthesiology, 70(2), 144.
+
+ Marie Laure Delignette-Muller, Christophe Dutang (2015). fitdistrplus: An R Package for Fitting
+  Distributions. Journal of Statistical Software, 64(4), 1-34. DOI 10.18637/jss.v064.i04.  Wilke C (2023). _cowplot: Streamlined Plot Theme and Plot Annotations for 'ggplot2'_. R package version 1.1.2, <https://CRAN.R-project.org/package=cowplot>.
+
+“Marine Protected Areas.” Marine Protected Areas | Partnership for Interdisciplinary Studies of Coastal Oceans, piscoweb.org/marine-protected-areas. Accessed 16 Mar. 2024. 
+
+R Core Team. (2020). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. URL https://www.R-project.org/.
+
+Revelle, W. (2021) psych: Procedures for Personality and Psychological Research, Northwestern University, Evanston, Illinois, USA, https://CRAN.R-project.org/package=psych Version = 2.1.9,.
+
+Rochet, M. J., & Benoît, E. (2012). Fishing destabilizes the biomass flow in the marine size spectrum. Proceedings of the Royal Society B: Biological Sciences, 279(1727), 284-292.
+
+Teagle, H., Hawkins, S. J., Moore, P. J., & Smale, D. A. (2017). The role of kelp species as biogenic habitat formers in coastal marine ecosystems. Journal of Experimental Marine Biology and Ecology, 492, 81-98.
+
+Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686, https://doi.org/10.21105/joss.01686
+
+ William Revelle (2024). _psych: Procedures for Psychological, Psychometric, and Personality
+Research_. Northwestern University, Evanston, Illinois. R package version 2.4.1, <https://CRAN.R-project.org/package=psych>.    
+
+
+## Appendix
+
+### Section 1: Data Cleaning 
+(This data comes from the entire PISCO survey dataset, courtesy of the Caselle Lab. The original data was cleaned in my lab with supervisors supervision to make it more accessible and transferable. Here are the steps we took, not coded becuase it was the precursor to transfering the CSV I will use, pisco_data, but I wanted to show what was done to clean the whole data set.)
+
+#Bellow I have shown how I cleaned the entire PISCO data set (HUGE) to get the csv i need for this project. 
+
+#select only the data we want, only UCSB 
+fish.dat <- subset(fish.raw, campus == "UCSB") #2807 - 1375
+#only Anacapa and Santa CRUZ
+fish.dat$island <- substr(fish.dat$site, 1,3)#creat new variable for ISLAND 
+unique(fish.dat$island)
+#now subset for only ANA and SCI 
+fish.dat <- subset(fish.dat, island == "ANA" | island == "SCI")
+#Select only the years we want 
+fish.dat <- subset(fish.dat, survey_year > 2014)  #'15 , '16, '17, '18, '19  
+#we could add more years if we need data 
+#select only the speices we want, chosing these speices for their valuable biological comparison being that one is targeted and one is untargeted so we would predict to see changes inside and outside of the MPA
+fish.keeps <- c("survey_year", "site","island", "site_status", "den_PCLA", "bm_PCLA", "den_CPUN", "bm_CPUN")
+fish.dat <- fish.dat[ , fish.keeps]
+#KELP DATA
+#select only the data we want
+#only UCSB 
+kelp.dat <- subset(kelp.raw, campus == "UCSB")
+#only Anacapa and Santa CRUZ
+kelp.dat$island <- substr(kelp.dat$site, 1,3)#create new variable for ISLAND 
+unique(kelp.dat$island)
+#now subset for only ANA and SCI 
+kelp.dat <- subset(kelp.dat, island == "ANA" | island == "SCI")
+#Select only the years we want 
+kelp.dat <- subset(kelp.dat, survey_year > 2014)  #'15 , '16, '17, '18, '19  
+#we could add more years if we need data 
+#select only the speices we want
+kelp.keeps <- c("survey_year", "site", "island", "site_status", "den_MACPYRAD", "den_MACSTIPES")
+kelp.dat <- kelp.dat[, kelp.keeps]
+#now join 
+dat <- full_join(kelp.dat, fish.dat)
+#DATA CLEAN UP
+#remove Black Sea Bass Reef
+dat <- subset(dat, site != "ANACAPA_BLACK_SEA_BASS")
+dat <- dat %>% drop_na()
+dat$site_status <- ifelse(dat$site_status == "N/A" , "reference", dat$site_status)
+
+
+
+### Section 2: Exploratory Data Analysis 
+
+Checking normallity of distribution of y1: Kelp bass biomass
+```{r} 
+# Histogram of un-transformed y-variable (kelp bass biomass)
+histogram<-ggplot(pisco_data, aes(x=bm_PCLA, fill=site_status))+ #making ggplot 
+  geom_histogram()+ #making histogram to test normality
+  theme_classic()+ #changing theme
+  labs(x="Kelp bass (PCLA) biomass (kg/transect)", y="frequency")+ #create labels
+  ggtitle("Histogram of kelp bass (PCLA) biomass (kg/trasect")+ #create title
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+pisco_data$log_bm_PCLA<-log(pisco_data$bm_PCLA+1) #making a new variable that is the log transformation of the PCLA biomass
+
+## Histogram of log transformed y-variable (kelp bass biomass)
+histogram2<-ggplot(pisco_data, aes(x=log_bm_PCLA, fill=site_status))+ #making a ggplot of the log transformed data
+  geom_histogram()+ #changing color, making histogram
+  theme_classic()+ #changing theme
+  labs(x="Log of kelp bass biomass (kg/transect)", y="frequency")+ #changing labels 
+  ggtitle("Histogram of log-transformed data for kelp bass biomass (kg/transect)")+ #title 
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+pisco_data$sqrt_bm_PCLA<-sqrt(pisco_data$bm_PCLA+1) #making a new variable that is the log transformation of the PCLA biomass
+
+#Histogram of square root transformed y-variable (kelp bass biomass)
+histogram3<-ggplot(pisco_data, aes(x=sqrt_bm_PCLA, fill=site_status))+ #making a ggplot of the log transformed data
+  geom_histogram ()+ #making histogram
+  theme_classic()+ #changing theme
+  labs(x="Sqrt of kelp bass biomass(kg/transect)", y="frequency")+ #changing labels
+  ggtitle("Histogram of square-root-transformed data for kelp bass biomass(kg/m^3)")+ #title 
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+grid.arrange(histogram, histogram2, histogram3, ncol=3) #putting all three histograms into one chunk/display 
+
+# qqPlot of y-variable
+qqPlot(pisco_data$bm_PCLA) # qqPlot of un-transformed kelp bass biomass
+qqPlot(pisco_data$log_bm_PCLA) # qqPlot of log-transformed kelp bass biomass
+qqPlot(pisco_data$sqrt_bm_PCLA) # qqPlot of square-root-transformed kelp bass
+
+# shapiro-wilks test of y-variable
+shapiro.test(pisco_data$bm_PCLA) #Shapiro-wilks test of un-transformed kelp bass biomass
+shapiro.test(pisco_data$log_bm_PCLA) #Shapiro-wilks test of log-transformed kelp bass biomass
+shapiro.test(pisco_data$sqrt_bm_PCLA) #Shapiro-wilks test of square-root-transformed kelp bass biomass
+
+```
+
+Checking normallity of distribution of y2: blacksmith biomass
+```{r}
+## Histogram of un-transformed y-variable (blacksmith biomass)
+histogram4<-ggplot(pisco_data, aes(x=bm_CPUN, fill=site_status))+ #making ggplot 
+  geom_histogram()+ #making histogram to test normality
+  theme_classic()+ #changing theme
+  labs(x="Blacksmith (CPUN) biomass (kg/transect)", y="frequency")+ #create labels
+  ggtitle("Histogram of blacksmith (CPUN) biomass (kg/trasect)")+ #create title
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+pisco_data$log_bm_CPUN<-log(pisco_data$bm_CPUN+1) #making a new variable that is the log transformation of CPUN biomass
+
+## Histogram of log transformed y-variable (blacksmith biomass)
+histogram5<-ggplot(pisco_data, aes(x=log_bm_CPUN, fill=site_status))+ #making a ggplot of the log transformed data
+  geom_histogram()+ #changing color, making histogram
+  theme_classic()+ #changing theme
+  labs(x="Log of blacksmith biomass (kg/transect)", y="frequency")+ #changing labels 
+  ggtitle("Histogram of log-transformed data for blacksmith biomass (kg/transect)")+ #title 
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+pisco_data$sqrt_bm_CPUN<-sqrt(pisco_data$bm_CPUN+1) #making a new variable that is the log transformation of  CPUN biomass
+
+#Histogram of square root transformed y-variable (blacksmith biomass)
+histogram6<-ggplot(pisco_data, aes(x=sqrt_bm_CPUN, fill=site_status))+ #making a ggplot of the log transformed data
+  geom_histogram ()+ #making histogram
+  theme_classic()+ #changing theme
+  labs(x="Sqrt of blacksmith biomass(kg/transect)", y="frequency")+ #changing labels
+  ggtitle("Histogram of square-root-transformed data for blacksmith biomass(kg/transect)")+ #title 
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+grid.arrange(histogram4, histogram5, histogram6, ncol=3) #putting all three histograms into one chunk/display 
+
+# qqPlot of y-variable
+qqPlot(pisco_data$bm_CPUN) #qqPlot of untransformed blacksmithbiomass  
+qqPlot(pisco_data$log_bm_CPUN) #qqPlot of log-transformed blacksmith biomass
+qqPlot(pisco_data$sqrt_bm_CPUN) #qqPlot of square-root transformed blacksmith
+
+# shapiro-wilks test of y-variable
+shapiro.test(pisco_data$bm_CPUN) # Shapiro-wilks test of un-transformed blacksmith biomass 
+shapiro.test(pisco_data$log_bm_CPUN) # Shapiro-wilks test of log-transformed blacksmith biomass 
+shapiro.test(pisco_data$sqrt_bm_CPUN) #Shapiro-wilks test of square-root transformed blacksmith biomass
+```
+
+graph for y~x categorical 
+```{r}
+categoricalkb<-ggplot(pisco_data, aes(x=site_status, y=bm_PCLA, fill=site_status))+ #making a ggplot, defining x and y, naming it categorical k(elp) b(ass)
+  geom_boxplot(outlier.shape=NA)+ #omitting outliers so they will not be double represented when geom jitter layer is added 
+  geom_jitter(width=0.25)+ #adding individual data points over the box plot 
+  labs(x="site status", y="Kelp bass biomass (kg/transect)")+ #creating labels 
+  ggtitle("Kelp bass biomass (kg/transect) inside and outside MPA")+ #making a title
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+categoricalbs<-ggplot(pisco_data, aes(x=site_status, y=bm_CPUN, fill=site_status))+ #making a ggplot, defining x and y, naming it categorical b(lack)s(mith)
+  geom_boxplot(outlier.shape=NA)+ #omitting outliers so they will not be double represented when geom jitter layer is added 
+  geom_jitter(width=0.25)+ #adding individual data points over the box plot
+  labs(x="site status", y="Blacksmith biomass (kg/transect)")+ #creating labels 
+  ggtitle("Blacksmith  biomass (kg/transect) inside and outside MPA")+ #making a title 
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+grid.arrange(categoricalkb, categoricalbs, nrow=1) #displaying both boxplots together 
+```
+
+graph for x~x numeric: 
+```{r}
+## plot y~x(numeric):
+twonum1<-ggplot(pisco_data, aes(x=den_PCLA, y=bm_PCLA))+ #making ggplot, defining variables, naming the plot 
+  geom_point() + #scatter plot
+  geom_point(data = filter(pisco_data, site_status == "mpa"), aes(color = "MPA")) +  # Change color for points in MPA
+  labs(x = "Density of Kelp Bass (number of fish/transect)", y = "Kelp bass biomass (kg/transect)") + #adding informative lables 
+  scale_color_manual(values = c("red"), labels = c("MPA"))+  # Specify color and label for the legend
+  ggtitle("Kelp bass biomass (kg/transect) vs kelp bass density (fish/transect)") #making a title
+plot(twonum1)
+
+## plot y~x(numeric) 2:
+twonum2<-ggplot(pisco_data, aes(x=den_MACSTIPES, y=bm_PCLA))+ #making ggplot, defining variables, naming the plot 
+  geom_point()+ #scatter plot
+  geom_point(data = filter(pisco_data, site_status == "mpa"), aes(color = "MPA")) +  # Change color for points in MPA
+  labs(x = "Density of macrocystis stipes (number/transect)", y = "Kelp bass biomass (kg/transect)") + #adding informative lables 
+  scale_color_manual(values = c("red"), labels = c("MPA"))+ # Specify color and label for the legend
+  ggtitle("Kelp bass biomass (kg/transect) vs density of macrocystis stipes") #informative title
+plot(twonum2)
+
+```
+Section 3: Statistical Methods 
+Statistical Test #1: Comparing Central tendency - Kelp Bass 
+```{r}
+#Step 1: Check assumptions
+
+#Assumes that the observations from each group represent a random sample from the population- yes
+# Assumes that the observations follow a normal distribution- check with histogram, qqplot, Shapiro-Wilks
+# Histogram of un-transformed y-variable (kelp bass biomass)
+histogram<-ggplot(pisco_data, aes(x=bm_PCLA, fill=site_status))+ #making ggplot 
+  geom_histogram()+ #making histogram to test normality
+  theme_classic()+ #changing theme
+  labs(x="Kelp bass (PCLA) biomass (kg/transect)", y="frequency")+ #create labels
+  ggtitle("Histogram of kelp bass (PCLA) biomass (kg/trasect")+ #create title
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+pisco_data$log_bm_PCLA<-log(pisco_data$bm_PCLA+1) #making a new variable that is the log transformation of the PCLA biomass
+
+## Histogram of log transformed y-variable (kelp bass biomass)
+histogram2<-ggplot(pisco_data, aes(x=log_bm_PCLA, fill=site_status))+ #making a ggplot of the log transformed data
+  geom_histogram()+ #changing color, making histogram
+  theme_classic()+ #changing theme
+  labs(x="Log of kelp bass biomass (kg/transect)", y="frequency")+ #changing labels 
+  ggtitle("Histogram of log-transformed data for kelp bass biomass (kg/transect)")+ #title 
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+pisco_data$sqrt_bm_PCLA<-sqrt(pisco_data$bm_PCLA+1) #making a new variable that is the log transformation of the PCLA biomass
+
+#Histogram of square root transformed y-variable (kelp bass biomass)
+histogram3<-ggplot(pisco_data, aes(x=sqrt_bm_PCLA, fill=site_status))+ #making a ggplot of the log transformed data
+  geom_histogram ()+ #making histogram
+  theme_classic()+ #changing theme
+  labs(x="Sqrt of kelp bass biomass(kg/transect)", y="frequency")+ #changing labels
+  ggtitle("Histogram of square-root-transformed data for kelp bass biomass(kg/m^3)")+ #title 
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+grid.arrange(histogram, histogram2, histogram3, ncol=3)
+
+# qqPlot of y-variable
+qqPlot(pisco_data$bm_PCLA) # qqPlot of y-variable
+qqPlot(pisco_data$log_bm_PCLA)
+qqPlot(pisco_data$sqrt_bm_PCLA)
+
+# shapiro-wilks test of y-variable
+shapiro.test(pisco_data$bm_PCLA) # shapiro-wilks test of y-variable
+shapiro.test(pisco_data$log_bm_PCLA)
+shapiro.test(pisco_data$sqrt_bm_PCLA)
+
+#y variable is not normally distributed even after transformations, but since there are more than 50 observations it is ok to invoke CLT. There are definitely outliers in this data but dropping them does not feel appropriate since the presence of very large fish is imporatnt to take into account when assessing MPAs. 
+
+#Check assumption that the observations from the two groups have the same variance- levenesTest
+leveneTest(bm_PCLA~site_status, data=pisco_data)
+#The null hypothesis of the levene's test is that the variance between the two groups is equal. Since the p-value is <0.05 we reject the null hypothesis that the variance between the two groups is equal. W will use non-parametric test for comparing central tendency: Mann-Whitney U-test/Wilcoxon Rank Sum test
+
+#Step Two: run apprppriate test: Mann-Whitney U-test/Wilcoxon Rank Sum test
+wilcox<-wilcox.test(pisco_data$bm_PCLA~ pisco_data$site_status)
+
+
+#results: Based on the results of this t-test, there is a significant difference between the median kelp bass biomass (kg/transect) inside and outside of MPAs. With a 95% confidence interval and 0.05 alpha level, a p-value of 0.02366, which is less than alpha means we can  reject the null hypothesis that there is not significant difference between the median biomass of kelp bass (kg/transect) inside and outside of MPAs.The test statistic for this test is 5.188, and the degrees of freedom are 231.
+```
+
+data are not normal, however since the sample sizes for my data set are large and there are more than 50 observations, I will invoke the central limit theorem. 
+
+
+. 
+
+I am also interested in comparing this to the biomass of blacksmith, a non-targeted species. I am interested in seeing whether there would also be a significant difference in the mean biomass of a non-targeted species inside and outside of an MPA. (explain how CPUN is a reference species)
+
+ 
+Statistical test #2: Central tendency- Blacksmith 
+```{r}
+#Step 1: Check assumptions
+
+#Assumes that the observations from each group represent a random sample from the population- yes
+# Assumes that the observations follow a normal distribution- check with histogram, qqplot, Shapiro-Wilks
+## Histogram of un-transformed y-variable (kelp bass biomass)
+histogram4<-ggplot(pisco_data, aes(x=bm_CPUN, fill=site_status))+ #making ggplot 
+  geom_histogram()+ #making histogram to test normality
+  theme_classic()+ #changing theme
+  labs(x="Blacksmith (CPUN) biomass (kg/transect)", y="frequency")+ #create labels
+  ggtitle("Histogram of blacksmith (CPUN) biomass (kg/trasect)")+ #create title
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+pisco_data$log_bm_CPUN<-log(pisco_data$bm_CPUN+1) #making a new variable that is the log transformation of the PCLA biomass
+
+## Histogram of log transformed y-variable (kelp bass biomass)
+histogram5<-ggplot(pisco_data, aes(x=log_bm_CPUN, fill=site_status))+ #making a ggplot of the log transformed data
+  geom_histogram()+ #changing color, making histogram
+  theme_classic()+ #changing theme
+  labs(x="Log of blacksmith biomass (kg/transect)", y="frequency")+ #changing labels 
+  ggtitle("Histogram of log-transformed data for blacksmith biomass (kg/transect)")+ #title 
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+pisco_data$sqrt_bm_CPUN<-sqrt(pisco_data$bm_CPUN+1) #making a new variable that is the log transformation of the PCLA biomass
+
+#Histogram of square root transformed y-variable (kelp bass biomass)
+histogram6<-ggplot(pisco_data, aes(x=sqrt_bm_CPUN, fill=site_status))+ #making a ggplot of the log transformed data
+  geom_histogram ()+ #making histogram
+  theme_classic()+ #changing theme
+  labs(x="Sqrt of blacksmith biomass(kg/transect)", y="frequency")+ #changing labels
+  ggtitle("Histogram of square-root-transformed data for blacksmith biomass(kg/transect)")+ #title 
+  theme(axis.title=element_text(face="bold", size=9), plot.title = element_text(size = 8)) #changing text elements 
+
+grid.arrange(histogram4, histogram5, histogram6, ncol=3) #plotting all together 
+
+# qqPlot of y-variable
+qqPlot(pisco_data$bm_CPUN) # qqPlot of un-transformed blacksmith biomass
+qqPlot(pisco_data$log_bm_CPUN) #qqPlot of log-transformed blacksmith biomass
+qqPlot(pisco_data$sqrt_bm_CPUN) #qqqPlot of square-root-transformed blacksmith biomass
+
+# shapiro-wilks test of y-variable
+shapiro.test(pisco_data$bm_CPUN) # Shapiro-wilks test of un-transformed blacksmith biomass
+shapiro.test(pisco_data$log_bm_CPUN) #Shapiro-wilks test of log-transformed blacksmith biomass
+shapiro.test(pisco_data$sqrt_bm_CPUN) #Shapiro-wilks test of square-root-transformed blacksmith biomass
+
+#y variable is not normally distributed even after transformations, but since there are more than 50 observations it is ok to invoke CLT. There are definitely outliers in this data but dropping them does not feel appropriate since the presence of very large fish is imporatnt to take into account when assessing MPAs. 
+
+#Check assumption that the observations from the two groups have the same variance- levenesTest
+leveneTest(bm_CPUN~site_status, data=pisco_data)
+# The null hypothesis of a leveneTest is that the variances are equal. Since p>0.05, we fail to reject the null hypothesis meaning the variance of the two groups are equal. 
+#CLT invoked for normal distribution, all other assumptions met so we can run a two-sample t test
+
+#Step Two: run apprppriate test: Mann-Whitney U-test/Wilcoxon Rank Sum test
+t.test(bm_CPUN~site_status, data=pisco_data, var.equal = TRUE) 
+
+#results: Based on the results of this t-test, there is not a significant difference between the mean blacksmith biomass (kg/transect) inside and outside of MPAs. With a 95% confidence interval and 0.05 alpha level, a p-value of 0.1269 which is greater than alpha means we fail to reject the null hypothesis that there is a significant difference between the mean biomass (kg/transect) of blacksmith inside and outside of MPAs.The test statistic for this t-test is -1.5321, and the degrees of freedom are 231. The 95% confidence interval is -0.38520866 to 0.04819e313. Sample estimates for the mean blacksmith biomass are 0.4399424 kg/transect inside MPAs and  0.6084502 kg/transect in reference areas. These similar estimates further support the conclusions of the t-test.
+```
+
+Prep for statistical tests 3 and 4: Correlation 
+```{r}
+pisco_data_num<-pisco_data %>% #making a subset of data with only numeric data form pisco_data
+  dplyr::select(c(5:12)) #selecting numeric columns
+pisco_data_num$log_den_PCLA<-log(pisco_data_num$den_PCLA+1) #adding a variable for the log transformed den_PCLA
+pisco_data_num$sqrt_den_PCLA<-sqrt(pisco_data_num$den_PCLA) #adding a variable for the sqrt transformed den_PCLA
+pisco_data_num$log_den_mac<-log(pisco_data_num$den_MACSTIPES+1) #adding a variable for the log transformed den_MACSTIPES
+pisco_data_num$sqrt_den_mac<-sqrt(pisco_data_num$den_MACSTIPES) #adding a variable for the sqrt transformed den_MACSTIPES
+
+pairs.panels(pisco_data_num, density=TRUE, cor=TRUE, lm=TRUE) #generating a pairs plot to visualize the relationships between variables in the dataset pisco_data_num. Includes histograms (density=TRUE), correlation coefficients (cor=TRUE), and linear regression lines (lm=TRUE) for each pairwise comparison.
+
+
+pisco_data_bmDen<-pisco_data_num %>% #selecting subset of data I want to evaluate further based on the mega pairs-panels 
+  dplyr::select(c(3,4,7,8,9,10))
+                
+pairs.panels(pisco_data_bmDen, density=TRUE, cor=TRUE, lm=TRUE) #generating a pairs plot to visualize the relationships between variables in the dataset pisco_data_num. Includes histograms (density=TRUE), correlation coefficients (cor=TRUE), and linear regression lines (lm=TRUE) for each pairwise comparison.
+
+```
+
+```{r}
+cor.test(pisco_data_bmDen$log_bm_PCLA, # log transformed variable (biomass of kelp bass)
+         pisco_data_bmDen$log_den_PCLA, #  log transformed variable (density of kelp bass)
+         method = "pearson", # using a Pearson's correlation because x and y both meet the assumptions of a bivariate normal distribution 
+         alternative = "two.sided") # value can be above or below threshold vs one side the value is either larger or smaller
+
+#visualizing results
+ggplot(pisco_data, aes(x=den_PCLA, y=bm_PCLA))+
+  geom_point(size=3)+
+  geom_smooth(method="lm", alpha=0.6, size=0.5)+
+  ylab("Kelp bass biomass (kg/transect)")+ 
+  xlab("Kelp bass density (fish/transect)")+
+  theme_bw()+ #cute theme
+  theme(text = element_text(size=12)) 
+
+# From the results of the Pearson’s parametric correlation, we conclude that r is equal to 0.7599329  which suggests a strong positive correlation between the density of kelp bass (fish/transect) and biomass of kelp bass (kg/transect). The p value is <2.2e-16 which is less than our alpha value of 0.05. This means we can reject the null hypothesis that there is no significant correlation between the density of kelp bass (fish/transect) and biomass of kelp bass (kg/transect). Our test statistic is  17.769, and df= 23. The 95% confidence interval is 0.6481601 to 0.7224044, which does not contain zero, hence there is a strong positive correlation between  the density of kelp bass (fish/transect) and biomass of kelp bass (kg/transect).
+
+```
+I want to test if there is a correlation between the biomass of PCLA and the density of macrocystis stipes- it would make sense that with greater macroalgae presence, there would be more structural heterogeneity and food in the ecosystem for kelp bass so their biomass may increase as kelp stipes increase. 
+
+```{r}
+pisco_data_kelp<-pisco_data_num %>%
+  dplyr::select(2,4,7,8,11,12) #making a subset pairs-panels to test assumptions for the data I want to analyze 
+pairs.panels(pisco_data_kelp, density=TRUE, cor=TRUE, lm=TRUE) #generating a pairs plot to visualize the relationships between variables in the dataset pisco_data_num. Includes histograms (density=TRUE), correlation coefficients (cor=TRUE), and linear regression lines (lm=TRUE) for each pairwise comparison.
+cor.test(pisco_data$bm_PCLA, # one numeric variable
+         pisco_data$den_MACSTIPES, # second numeric variable
+         method = "spearman", # MUST specify if it's pearson or spearman
+         alternative = "two.sided") # value can be above or below threshold vs one side the value is either larger or smaller
+
+#visualizing results
+ggplot(pisco_data, aes(x=den_MACSTIPES, y=bm_PCLA))+
+  geom_point(size=3)+
+  geom_smooth(alpha=0.6, size=0.5)+
+  ylab("Kelp bass biomass (kg/transect)")+ 
+  xlab("Density of macrocysitis stipes (#/transect)")+
+  theme_bw()+ 
+  theme(text = element_text(size=12)) 
+
+#From the results of the Pearson’s parametric correlation, we conclude that rho is equal to -0.03937696 which suggests weak negative relationship between the density of macrocystis stipes (#/transect) and the biomass of kelp bass (kg/transect). The p value is 0.5498 which is greater than our alpha value 0f 0.05. This means we fail to reject the null hypothesis that there is no significant monotonic relationship between the density of macrocystis stipes (#/transect) and the biomass of kelp bass (kg/transect). Our test statistic is 2191198. In conclusion, there is not a significant monotonic relationship between the density of macrocystis stipes (#/transect) and the biomass of kelp bass (kg/transect).
+```
+
+
